@@ -1,0 +1,1 @@
+All MATLAB figure files and associated PDFs output from the program are saved in this folder.
