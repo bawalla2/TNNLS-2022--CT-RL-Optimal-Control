@@ -534,14 +534,14 @@ ode_opts = odeset('MaxStep',maxstep);
 
 [t, x] = ode45(@odefunct, tspan, x0_sim, ode_opts);
 
-% % DEBUGGING: Plot state trajectory
-% figure(100)
-% hold on
-% plot(t,x(:,1:n));
-% title('State Trajectory')
-% grid on
-% xlabel('Time (sec)')
-% ylabel('x(t)')
+% DEBUGGING: Plot state trajectory
+figure(100)
+hold on
+plot(t,x(:,1:n));
+title('State Trajectory')
+grid on
+xlabel('Time (sec)')
+ylabel('x(t)')
 
 % DEBUGGING: Print IC x(0)
 x0
@@ -1304,7 +1304,8 @@ else
         %       
         % EVALUATE POLICY \mu(x, wv_k)
         %    
-        mux = - (1 / 2) * inv(R) * (w_s' * Psix)';
+        if is_orig_ex
+            mux = - (1 / 2) * inv(R) * (w_s' * Psix)';
 
 
         % Multiply factor of \mu(x, wv_k) in first N_2 elements
@@ -1463,7 +1464,7 @@ gx = eval_g(xs, sys);
 u = uxt_alg(xs, t);
 
 % Evaluate state derivative \dot{x}
-dxs = fx + gx * u;
+dxs = fx + gx * u^3;
 
 
 % ***********************
@@ -1607,7 +1608,7 @@ gx = eval_g(xs, sys);
 u = uxt_alg(xs, t);
 
 % Evaluate state derivative \dot{x}
-dxs = fx + gx * u;
+dxs = fx + gx * u^3;
 
 
 % ***********************

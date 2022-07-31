@@ -119,7 +119,7 @@ xmat = out_data.xmat;
 tvec_pi = out_data.tvec_pi;
 c_mat = out_data.c_mat;
 
-num_pol_iter = alg_settings.num_pol_iter;
+istar = alg_settings.istar;
 
 N = alg_settings.basis.N;
 
@@ -151,7 +151,7 @@ end
 
 % PLOT
 figure(figcount)
-h_fig = plot(0:num_pol_iter, c_mat); 
+h_fig = plot(0:istar, c_mat); 
 set(h_fig, 'Marker', 'o');
 title('Critic Weights $c_i$'); 
 xlabel('Iteration $i$'); 
@@ -207,7 +207,7 @@ xlim([0 tvec(end)]);
 ylabel('$x(t)$');
 
 % Vertical lines at iteration counts
-for i = 1:num_pol_iter
+for i = 1:istar
     % Get time instant corresponding to beginning of current iteration
     ti = tvec_pi(i+1);
     % Vertical line at t_{f,i}

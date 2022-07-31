@@ -45,7 +45,7 @@ function plot_format(plot_settings, group_settings)
 %   corresponding formatting variable is 'ttl_fontsize'. If one wants to
 %   change this to, say, 10, they would in plot_settings.custom_sett
 %   declare:
-%               plot_settings.custom_sett.ttl_fontsize = 10;
+%               plot_settings.custom_sett.ttl_fontsize = 10
 %
 % NOTE: Do not declare '.custom_sett' if no default settings are to be
 % overriden.

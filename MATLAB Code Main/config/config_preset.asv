@@ -1286,7 +1286,9 @@ switch preset
         
         % Number of policy iterations to perform in the PI algorithm before
         % terminating
-        istar = group_settings.istar;
+%         istar = group_settings.istar;
+        istar = 3;
+        istar = 3;
         
         % Number of simulations to run per iteration of the PI algorithm
         num_sims_per_iter = 1;      

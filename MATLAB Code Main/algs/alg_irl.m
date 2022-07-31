@@ -60,23 +60,23 @@ function out_data = alg_irl(alg_settings)
 %                           '0'.
 %   T                       (Double) integral reinforcement interval length
 %                           (sec).
-%   num_pol_iter            (Integer) number of policy iterations to
+%   istar                   (Integer) number of policy iterations to
 %                           execute before terminating the algorithm.
 %   num_sims_per_iter       (Integer) Number of simulations to execute per
 %                           iteration of the PI algorithm. NOTE: a
-%                           simulation consists of 'num_samples_per_sim'
+%                           simulation consists of 'l'
 %                           data samples, each taken over 'T' seconds. So
 %                           each iteration has 'num_sims_per_iter' *
-%                           'num_samples_per_sim' total T-second samples
+%                           'l' total T-second samples
 %                           collected.
-%   num_samples_per_sim     (Integer) number of samples to collect per
+%   l     (Integer) number of samples to collect per
 %                           simulation.     
 %   x0mat                   (Matrix) This matrix can be empty or have up to
-%                           'num_pol_iter' * 'num_sims_per_iter' rows, with
+%                           'istar' * 'num_sims_per_iter' rows, with
 %                           n columns. Each time a new simulation begins,
 %                           the initial conditions need to be set. These
 %                           ICs can be set manually for as many of the
-%                           total 'num_pol_iter' * 'num_sims_per_iter'
+%                           total 'istar' * 'num_sims_per_iter'
 %                           simulations run in the algorithm. If x0mat runs
 %                           out of ICs, then the ICs will be generated
 %                           either randomly at the beginning of each new
@@ -117,13 +117,13 @@ function out_data = alg_irl(alg_settings)
 %                           indexes the time instants specified in .tvec,
 %                           and whose m-columns are the control signal u(t)
 %                           at the respective time instant.
-%       .tvec_pi            ('num_pol_iter' - dimensional vector)
+%       .tvec_pi            ('istar' - dimensional vector)
 %                           Vector of time instants corresponding to the
 %                           sample instants of each new iteration of the PI
 %                           algorithm.
-%       .c_mat               (N x 'num_pol_iter' matrix) critic NN weights
+%       .c_mat               (N x 'istar' matrix) critic NN weights
 %                           at each of the time instants of .tvec_pi.
-%       cond_A_vec          ('num_pol_iter'-dim. vector) The i-th index of
+%       cond_A_vec          ('istar'-dim. vector) The i-th index of
 %                           this vector contains the condition number of
 %                           the matrix involved in performing the
 %                           least-squares minimization associated with the
@@ -174,9 +174,9 @@ global is_learning;
 % *************************************************************************
 
 T = alg_settings.T;
-num_pol_iter = alg_settings.num_pol_iter;
+istar = alg_settings.istar;
 num_sims_per_iter = alg_settings.num_sims_per_iter;
-num_samples_per_sim = alg_settings.num_samples_per_sim;
+l = alg_settings.l;
         
 sys = alg_settings.sys;             % System array
 n = alg_settings.sys.n;             % System order
@@ -221,7 +221,7 @@ is_learning = 1;
 simcount = 1;
 
 % Initialize vector to hold condition number at each iteration
-cond_A_vec = zeros(num_pol_iter, 1);
+cond_A_vec = zeros(istar, 1);
 
 
 % *************************************************************************
@@ -232,7 +232,7 @@ cond_A_vec = zeros(num_pol_iter, 1);
 
 
 % Critic NN weights
-c_mat = zeros(num_pol_iter + 1,N);
+c_mat = zeros(istar + 1,N);
 c_mat(1,:) = c_i';
 
 % Time vector, state trajectory, control signal
@@ -253,8 +253,8 @@ umat = [];
 % *************************************************************************
 
 
-for i = 1:num_pol_iter
-% for i = 1:num_pol_iter - 1          % DEBUGGING
+for i = 1:istar
+% for i = 1:istar - 1          % DEBUGGING
 
     
     % ***********************
@@ -262,12 +262,12 @@ for i = 1:num_pol_iter
     % INITIALIZE SAMPLE COUNTER
     %
     % Each iteration of the PI algorithm, 'num_sims_per_iter' *
-    % 'num_samples_per_sim' samples of the state and integral reinforcement
+    % 'l' samples of the state and integral reinforcement
     % are collected for the least squares minimization at the end of the
     % iteration, each data point corresponding to a T-second simulation.
     % This counter is initialized to 1 here and is incremented after each
     % T-second simulation until it will eventually reach the value
-    % 'num_sims_per_iter' * 'num_samples_per_sim'
+    % 'num_sims_per_iter' * 'l'
     %
     samplecount = 1;
     
@@ -319,11 +319,11 @@ for i = 1:num_pol_iter
         %
         % This inner loop is the one in which the individual
         % simulations are run. One simulation will consist of
-        % 'num_samples_per_sim' T-second simulations, each run
+        % 'l' T-second simulations, each run
         % separately so that data may be collected at the end of the
         % T-second interval.
         %  
-        for s = 1:num_samples_per_sim
+        for s = 1:l
             
             % ***********************
             %       
@@ -332,21 +332,21 @@ for i = 1:num_pol_iter
             
             % Time span for current simulation
             tspan = ...
-                T * (i - 1) * num_sims_per_iter * num_samples_per_sim +...
+                T * (i - 1) * num_sims_per_iter * l +...
                 T * [samplecount - 1, samplecount];
 
             % Run simulation
 %             [t, x] = ode23(@odefunct, [0 T], x0);
             [t, x] = ode45(@odefunct, tspan, x0_sim);
  
-            % DEBUGGING: Plot state trajectory
-            figure(100)
-            plot(t,x(:,1:n));
-            title('State Trajectory')
-            grid on
-            xlabel('Time (sec)')
-            ylabel('x(t)') 
-            hold on
+%             % DEBUGGING: Plot state trajectory
+%             figure(100)
+%             plot(t,x(:,1:n));
+%             title('State Trajectory')
+%             grid on
+%             xlabel('Time (sec)')
+%             ylabel('x(t)') 
+%             hold on
             
 %             % DEBUGGING: Plot state trajectory
 %             figcount = 200;
@@ -481,8 +481,8 @@ end
 
 % % DEBUGGING: Plot critic NN params
 % figure(101)
-% tmp = (0:1:num_pol_iter) * T * num_sims_per_iter * num_samples_per_sim;
-% plot(tmp, c_mat(:,1:num_pol_iter + 1)','.-'); 
+% tmp = (0:1:istar) * T * num_sims_per_iter * l;
+% plot(tmp, c_mat(:,1:istar + 1)','.-'); 
 % title('NN parameters'); 
 % xlabel('Time (s)'); 
 % lgnd = {'w_1', 'w_2', 'w_3', 'w_4', 'w_5', 'w_6', 'w_7', 'w_8'};
@@ -492,7 +492,9 @@ end
 
 
 % DEBUGGING: ICs
-x_0 = x0mat(1,:)'
+if ~isempty(x0mat)
+    x_0 = x0mat(1,:)'
+end
 
 % DEBUGGING: Final critic NN params
 c_i
@@ -522,7 +524,7 @@ is_learning = 0;
 x0_sim = x1;
 
 % Total length of learning window [0, t_f]
-tf = T * num_pol_iter * num_sims_per_iter * num_samples_per_sim;
+tf = T * istar * num_sims_per_iter * l;
 
 % Time span for simulation
 tspan = [tf, tf + tsim];
@@ -587,7 +589,7 @@ out_data.xmat = xmat;
 out_data.umat = umat;
 
 % Time indices corresponding samples of new PI iterations.
-tvec_pi = (0:1:num_pol_iter) * T * num_sims_per_iter * num_samples_per_sim;
+tvec_pi = (0:1:istar) * T * num_sims_per_iter * l;
 
 % Weight data
 out_data.tvec_pi = tvec_pi;

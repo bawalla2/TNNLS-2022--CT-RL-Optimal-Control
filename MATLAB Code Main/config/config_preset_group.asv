@@ -725,7 +725,7 @@ switch preset_group
                         'irl'
 %                         'spi'
                         'radp_matched'
-                        'vi'
+%                         'vi'
                                             };
  
         % Number of algorithms tested                
@@ -1096,10 +1096,10 @@ switch preset_group
         %           
         
         alg_list =  {
-                        'irl'
+%                         'irl'
 %                         'spi'
 %                         'radp_matched'
-%                         'vi'
+                        'vi'
                                             };
  
         % Number of algorithms tested                
@@ -1287,9 +1287,7 @@ switch preset_group
         tsim = 0.01;
         
         % Number of iterations to terminate after (IRL and RADP only)
-        istar = 2;      % IRL -- works
-%         istar = 3;      % IRL -- diverges
-%         istar = 20;     % RADP
+        istar = 20;
         
         % Initial stabilizing policy (if algorithm uses it)
         u_0.tag = 'actor_g_known_lqr';

@@ -29,8 +29,18 @@
 %
 % *************************************************************************
 %
-% NONE. However, the following pre-existing data will need to be imported
-% from a user-specified directory:
+% NONE. However, the following variables are set manually below:
+%
+% relpath_data          (String) Relative file path to algorithm data (see
+%                       below) note.
+% savefigs              (Boolean) 1 = save figures to PDF. 0 = don't save.
+% relpath               (String) relative file path of folder to save plots
+%                       to, if they are to be saved.
+% do_individual_plots   (Boolean) 1 = plot each preset's individual plots.
+%                       0 = don't plot.
+%
+% *** NOTE: following pre-existing data will need to be imported from the
+% relative directory specified by 'relpath_data':
 %
 % alg_settings_cell     (Cell, each entry a Struct) Algorithm 
 %                       settings/parameters for subsequent execution
