@@ -11,11 +11,13 @@
 % Main file for comparison of CT RL-based optimal control techniques.
 % Considers infinite-horizon, input-affine nonlinear systems.
 %
-% Associated with work:
+% Associated with the two-part work:
 %
-% B. A. Wallace, J. Si, "A Review of Continuous-Time Reinforcement Learning
-% Control: Theoretical Results, Insights on Performance, and Needs for New
-% Designs" TNNLS 2022.
+% B. A. Wallace, J. Si, "Continuous-Time Reinforcement Learning Control --
+% Part I: A Review of Theoretical Results" TNNLS 2022.
+%
+% B. A. Wallace, J. Si, "Continuous-Time Reinforcement Learning Control --
+% Part II: Insights on Performance and Needs for New Designs" TNNLS 2022.
 %
 %
 % ***** PROGRAM EXECUTION FLOW:

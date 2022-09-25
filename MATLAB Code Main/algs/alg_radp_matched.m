@@ -17,6 +17,12 @@ function out_data = alg_radp_matched(alg_settings)
 %   feedback stabilization of nonlinear systems." IEEE Transactions on
 %   Neural Networks and Learning Systems, 25:882-893, 2014.
 %
+% *** NOTE:
+%
+% This program was developed to run single-input systems (m = 1) ONLY. It
+% can easily be adapted to the multi-input case (cf. Wallace, Si TNNLS 2022
+% Part I, Sec. VI).
+%
 % *************************************************************************
 %
 % CALL SYNTAX
