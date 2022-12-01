@@ -1114,6 +1114,7 @@ switch preset_group
         
         % Vector of x_1(0)
         x1vec = 1;
+%         x1vec = (-1:0.1:1)';     % Similar behavior regardless of IC   
 %         x1vec = -1;
 %         x1vec = 0.25;
 %         x1vec = 0.01;
@@ -1127,6 +1128,7 @@ switch preset_group
         
         % Vector of x_2(0)
         x2vec = 15 * pi/180;
+%         x2vec = (-30:1:30)'*pi/180;   % Similar behavior regardless of IC     
 %         x2vec = 1;
 %         x2vec = -1;
 %         x2vec = 0.25;
