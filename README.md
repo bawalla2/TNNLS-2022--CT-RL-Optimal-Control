@@ -4,7 +4,7 @@ Brent Wallace
 2022/07/30
 Arizona State University
 
-Contains all research-related code for the two-part work:
+Contains all research-related code for the work:
   
 B. A. Wallace, J. Si, "Continuous-Time Reinforcement Learning Control: A Review of Theoretical Results, Insights on Performance, and Needs for New Designs" TNNLS 2022. (pending review).
   
