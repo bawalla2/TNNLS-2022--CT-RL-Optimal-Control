@@ -1,0 +1,1866 @@
+function alg_settings = config(preset, group_settings)
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+%
+% SELECT ALGORITHM, SYSTEM, DESIGN PARAMETERS BASED ON PRESET
+%
+% Brent Wallace  
+%
+% 2021-11-06
+%
+% This program, given a desired example preset, handles all algorithm
+% initialization/configuration.
+%
+% Algorithm options:
+%
+%   irl
+%   spi
+%   radp_matched
+%   radp_unmatched
+%   vi
+%
+% System options:
+%
+%   vrabie_lewis_2009_easy
+%   vrabie_lewis_2009_hard
+%   vamvoudakis_lewis_2010_F16_lin
+%   vamvoudakis_lewis_2010_nonlin
+%   jiang_jiang_2014_engine
+%   bian_jiang_2021_nonlin
+%
+% Preset options:
+%
+%   vrabie_lewis_2009_hard_ex
+%       The IRL algorithm implemented on their 'hard' example (cf. Sec.
+%       6.2) with design parameters as in the example.
+%
+%   vamvoudakis_lewis_2010_F16_lin_ex
+%       The SPI algorithm implemented on their linear F16 example (cf. Sec.
+%       5.1) with design parameters as in the example.
+%
+%   vamvoudakis_lewis_2010_nonlin_ex
+%       The SPI algorithm implemented on their nonlinear example (cf. Sec.
+%       5.2). Not all design parameters were given (only Q, R were given)
+%       in the original work, so parameters chosen to repeat the results of
+%       the work as close as possible.
+%
+%   jiang_jiang_2014_engine_ex
+%       The RADP with unmatched uncertainty algorithm implemented on a jet
+%       engine system (cf. Sec. V. A.) with design parameters as given in
+%       the example.
+%
+%   bian_jiang_2021_nonlin
+%       The VI algorithm implemented the nonlinear system in the example of
+%       Sec. V. A. with design parameters as given in the example.
+%
+% *************************************************************************
+%
+% CALL SYNTAX
+%
+% *************************************************************************
+%
+% alg_settings = config(preset)
+%
+% *************************************************************************
+%
+% INPUTS
+%
+% *************************************************************************
+%
+% preset            (String) Algorithm/system preset for desired example.
+% group_settings    (Struct, OPTIONAL) Contains system/design parameters to
+%                   be shared across all presets in the desired group.
+%                   E.g., if for this preset group all designs share the
+%                   same Q, R matrices, those fields may be included in
+%                   this struct. If not used, pass an empty array to this
+%                   argument.
+%
+% *************************************************************************
+%
+% OUTPUTS
+%
+% *************************************************************************
+%
+% alg_settings  (Struct) Algorithm settings/parameters for subsequent
+%               execution according to desired preset (see respective
+%               algorithm .m-file for details). 
+%               
+%               Regardless of the preset, alg_settings will have the
+%               following fields:
+%
+%   sys         (Struct) Contains system parameters. Has the following
+%               fields:
+%       tag     (String) System tag (see above for options).
+%       n       (Integer) System order.
+%       m       (Integer) Number of inputs of system.
+%
+%   plot_settings       (Struct) Contains plot settings for this preset.
+%                       Has the following fields:
+%       legend_entry    (String) A label for this specific preset to
+%                       distinguish it from the other designs executed in
+%                       the preset group. E.g., if a group executes
+%                       different algorithms, legend_entry for one preset
+%                       might be 'IRL'.
+%       plotfolder      (String) Name of the folder to save plots to for
+%                       this preset. This could be the preset tag, or any
+%                       other convenient identifier.
+%       sys_settings    (Struct) Contains plot settings corresponding to
+%                       the system designed for. Has the following fields:
+%           x_t_title   (n-dim. Cell) i-th entry contains the title to put
+%                       on the plot of x_i(t). E.g., x_t_title{i} =
+%                       'Pendulum angle \theta'.
+%           x_t_xlabel  (n-dim. Cell) i-th entry contains the x-axis label
+%                       to put on the plot of x_i(t). E.g., x_t_xlabel{i} =
+%                       '\theta(t) (deg)'.
+%           x_t_filename (n-dim. Cell) i-th entry contains the desired file
+%                       name for the plot of x_i(t). E.g., x_t_filename{2}
+%                       = 'x_2_t' or 'theta_t'.
+%                       to put on the plot of x_i(t). E.g., x_t_xlabel{i} =
+%                       '\theta(t) (deg)'.
+%           u_t_title   (m-dim. Cell) i-th entry contains the title to put
+%                       on the plot of u_i(t). E.g., u_t_title{i} = 'Thrust
+%                       T'. For m = 1, this could simply be, e.g.,
+%                       u_t_title{1} = 'Control Signal u(t)'
+%           u_t_xlabel  (m-dim. Cell) i-th entry contains the x-axis label
+%                       to put on the plot of u_i(t). E.g., u_t_xlabel{i} =
+%                       'T(t)'. For m = 1, this could simply be, e.g.,
+%                       u_t_xlabel{1} = 'u(t)'.
+%           u_t_filename (m-dim. Cell) i-th entry contains the desired file
+%                       name for the plot of u_i(t). E.g., u_t_filename{2}
+%                       = 'u_2_t' or 'T_t'.
+%
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+
+
+
+%%
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+%
+% BEGIN MAIN
+% 
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+
+
+switch preset
+    
+    
+    % *********************************************************************
+    %
+    % VRABIE, LEWIS (2009) -- NONLINEAR "HARD" EXAMPLE
+    %
+    
+    case 'vrabie_lewis_2009_hard_ex'
+        
+        %%   
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'irl';
+        sys.tag = 'vrabie_lewis_2009_hard';
+  
+        % ***********************
+        %
+        % SETTINGS AND DESIGN PARAMETERS
+        %       
+        
+        % Integral reinforcement interval length (sec)
+        T = 0.1;
+        
+        % Number of policy iterations to perform in the PI algorithm before
+        % terminating
+        num_pol_iter = 5;
+        
+        % Number of simulations to run per iteration of the PI algorithm
+        num_sims_per_iter = 8;      
+        
+        % Number of samples to collect per simulation for least squares
+        % minimization at end of each iteration of PI algorithm
+        num_samples_per_sim = 5;
+        
+        
+%         % DEBUGGING: Compare to Vrabie, Lewis (2009) code settings
+%         num_pol_iter = 5;
+%         num_sims_per_iter = 4;
+%         num_samples_per_sim = 5;
+     
+%         num_pol_iter = 5;
+%         num_sims_per_iter = 1;
+%         num_samples_per_sim = 10;
+
+        % Matrix of ICs. A total of 'num_pol_iter' * 'num_sims_per_iter'
+        % simulations are run in the algorithm. As many of the ICs as
+        % desired can be set in this matrix. Else, ICs will be generated
+        % manually.
+        x0mat = [];
+
+        % Manner in which ICs are generated at the beginning of each new
+        % simulation, after the algorithm has run out of ICs specified in
+        % x0mat. Has the options:
+        %       'rand'      Randomly generate new ICs. 
+        %       'cont'      Continue ICs of new simulation as final values
+        %                   of previous simulation.
+        x0_behavior = 'rand';        
+        
+        % ICs for critic NN
+        W0 = [0 ; 0 ; 3/2 ; 0 ; 0 ; -0.1 ; 0 ; 3];
+        
+        % State penalty function
+        Q = 'vrabie_lewis_2009_hard_ex';
+        
+        % Control penalty matrix
+        R = 1;
+        
+        % Basis
+        basis.tag = 'order_2_degree_4';
+        
+        % Probing noise
+        noise.tag = '0';        % No probing noise used
+
+        % Time to simululate for after learning (i.e, [t_f, t_f + t_sim])
+        % (sec)
+        tsim = 10;         
+        
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry (not used)
+        legend_entry = '';
+
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = preset;        
+        
+    % *********************************************************************
+    %
+    % VAMVOUDAKIS, LEWIS (2010) -- LINEAR F16 EXAMPLE
+    %
+    
+    case 'vamvoudakis_lewis_2010_F16_lin_ex'
+        
+        %%
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'spi';
+        sys.tag = 'vamvoudakis_lewis_2010_F16_lin';       
+
+        % Probing noise tag
+        noise.tag = 'vamvoudakis_lewis_2010_ex';
+        
+        % Length of learning window [0, t_f].
+        % I.e., time to insert probing noise for (sec).
+        tf = 750;
+        
+        % Time to simululate for after learning (i.e, [t_f, t_f + t_sim])
+        % (sec)
+        tsim = 50;        
+
+        % State penalty matrix
+        Q = eye(3);
+        
+        % Control penalty matrix
+        R = 1;
+        
+        % Basis
+        basis.tag = 'order_3_degree_2';
+        basis.N = 6;        
+        
+        % NN tuning gains
+        alpha1 = 50;
+        alpha2 = 1;
+        
+        % NN tuning parameters
+        F1 = -5*ones(basis.N,1);     
+        F2 = 10*eye(basis.N);
+        
+        % Initial conditions
+        Wc0 = ones(basis.N,1);
+        Wa0 = rand(basis.N,1);
+        x0 = [1; -1; 1];
+                
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry (not used)
+        legend_entry = '';
+
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = preset;        
+        
+    % *********************************************************************
+    %
+    % VAMVOUDAKIS, LEWIS (2010) -- NONLINEAR EXAMPLE
+    %
+    
+    case 'vamvoudakis_lewis_2010_nonlin_ex'  
+   
+        %%
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'spi';
+        sys.tag = 'vamvoudakis_lewis_2010_nonlin';        
+
+        % Probing noise tag
+        noise.tag = 'vamvoudakis_lewis_2010_ex_nonlin';
+
+        % Length of learning window [0, t_f].
+        % I.e., time to insert probing noise for (sec).
+        tf = 80;
+        
+        % Time to simululate for after learning (i.e, [t_f, t_f + t_sim])
+        % (sec)
+        tsim = 20;        
+        
+        % State penalty matrix
+        Q = eye(2);
+        
+        % Control penalty matrix
+        R = 1;
+        
+        % Basis
+        basis.tag = 'order_2_degree_2';
+        basis.N = 3;        
+        
+        % NN tuning gains
+        alpha1 = 5;
+        alpha2 = 1;
+        
+        % NN tuning parameters
+        F1 = 1*ones(basis.N,1);     
+        F2 = 1*eye(basis.N);
+                
+        % Initial conditions
+        Wc0 = ones(basis.N,1);
+        Wa0 = ones(basis.N,1);
+        x0 = [1; 1];
+
+%         % DEBUGGING: Trying to get original Wa update law to stabilize
+%         alpha1 = 10;
+%         alpha2 = 5;
+%         F1 = 10*ones(basis.dim,1);     
+%         F2 = 100*eye(basis.dim);
+%         Wc0 = [0.5; 0; 1];
+%         Wa0 = [0.5; 0; 1];   
+%         tf = 10;
+
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry (not used)
+        legend_entry = '';
+
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = preset;        
+        
+    % *********************************************************************
+    %
+    % Y. JIANG, Z.-P. JIANG (2014) -- JET ENGINE EXAMPLE
+    %        
+        
+    case 'jiang_jiang_2014_engine_ex'
+        
+        %%
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'radp_unmatched';
+        sys.tag = 'jiang_jiang_2014_engine';
+  
+        % ***********************
+        %
+        % SETTINGS AND DESIGN PARAMETERS
+        %       
+                
+        % Probing noise tag
+        noise.tag = 'jiang_jiang_2014_engine_ex';
+        
+        % Number of samples to collect for least squares minimizations
+%         l = 50;
+%         l = 10;
+%         l = 5;
+        l = 100;
+%         l = 1000;
+        
+        % Tolerance \epsilon_1 to determine phase-1 termination (cf. eqn.
+        % (59))
+        eps1 = 1e-6;
+
+        % Online data collection window [0, t_f]
+        tf = 10;   
+%         tf = 1000;
+        
+        % Time to simulate for after getting final robust policy
+        tsim = 30;
+%         tsim = 10;
+%         tsim = 0.001;
+
+        % State penalty function tag
+        Q = 'jiang_jiang_2014_engine_ex';
+        
+        % Constant \epsilon > 0 such that Q(x) - \epsilon^2 ||x||^2 is a
+        % positive-definite function (cf. Assumption 3.3, Sec. III. B.)
+        % NOTE: In this case Q(x) = 4(x^2 + x^3 + x^4), so \epsilon \in
+        % (0,3] works
+        eps = sqrt(0.1);
+        
+        % Control penalty gain
+        R = 1;        
+
+        % Critic NN activation function parameters (cf. eqn. (13))
+        Phi1.tag = 'jiang_jiang_2014_engine_ex_Phi1';
+        Phi1.N = 3;
+        
+        % Actor NN activation function parameters (cf. eqn. (14))
+        Phi2.tag = 'jiang_jiang_2014_engine_ex_Phi2';
+        Phi2.N = 3;
+        
+        % NN activation function parameters for approximation of
+        % \hat{f}_1(x,z) (cf. eqn. (43))
+        Phi3.tag = 'jiang_jiang_2014_engine_ex_Phi3';
+        Phi3.N = 7;
+        
+        % NN activation function parameters for approximation of
+        % \hat{g}_1(x) (cf. eqn. (44))
+        Phi4.tag = 'jiang_jiang_2014_engine_ex_Phi4';
+        Phi4.N = 4;  
+        
+        % Pack basis parameters
+        basis.Phi1 = Phi1;
+        basis.Phi2 = Phi2;
+        basis.Phi3 = Phi3;
+        basis.Phi4 = Phi4;
+        
+        % Tag corresponding to the initial stabilizing policy u_0(x) (cf.
+        % Assumption 4.2).
+        u_0 = 'jiang_jiang_2014_engine_ex';
+        
+        % Robust redesign function \rho(s) (cf. under eqn. (31)).
+        rho = 'jiang_jiang_2014_engine_ex';
+        
+        % Initial conditions
+        w0 = 1;                 % IC for uncertain dynamics w
+        x0 = 2;                 % IC for known dynamics x
+        z0 = -0.1;              % IC for known dynamics z
+        
+        w_0 = [1; zeros(Phi2.N - 1, 1)];       % IC for actor NN
+ 
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry (not used)
+        legend_entry = '';        
+
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = preset;        
+        
+    % *********************************************************************
+    %
+    % T. BIAN, Z.-P. JIANG (2021) -- NONLINEAR EXAMPLE
+    %
+    
+    case 'bian_jiang_2021_nonlin'
+        
+        %%
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'vi';
+        sys.tag = 'bian_jiang_2021_nonlin_ex';  
+        
+        % Order in which the control signal enters the system
+        sys.upow = 3;
+        
+        % ***********************
+        %
+        % SETTINGS AND DESIGN PARAMETERS
+        %     
+        
+        % State, control penalty functions
+        Q = 'bian_jiang_2021_nonlin_ex';
+        R = 'bian_jiang_2021_nonlin_ex';
+        
+        % Critic NN basis 
+        Phi.tag = 'order_2_degree_2';
+        Phi.N1 = 3;
+        
+        % Hamiltonian NN basis \Psi_0(x)
+        Psi0.tag = 'bian_jiang_2021_nonlin_psi0';
+        
+        % Hamiltonian NN basis \Psi_1(x)
+        Psi1.tag = 'bian_jiang_2021_nonlin_psi1';
+           
+        % Store basis parameters
+        basis.Phi = Phi;
+        basis.Psi0 = Psi0;
+        basis.Psi1 = Psi1;
+        
+        % Probing noise tag
+        noise.tag = 'bian_jiang_2021_nonlin';
+        
+        % Initial policy u_0(x) (not used)
+        u_0 = '0';
+ 
+        % Max number of iterations after which to terminate the VI
+        % algorithm
+%         max_iter = 30;   
+        max_iter = 500;       
+
+        
+        % Length of learning window [0, t_f] (sec)
+        tf = 1.8;
+        
+        % Time to simululate for after learning (i.e, [t_f, t_f + t_sim])
+        % (sec)
+        tsim = 10 - tf;                  
+        
+        % Forward Euler approximation for NN weight updates (cf. Sec. IV.
+        % D.)
+        h_k = 0.003;
+%         h_k = 1e-2;
+        
+        % Max stepsize for ode45
+        maxstep = 1e-3;
+        
+        % Initial conditions x(0)
+        x0 = [-2.9; -2.9];
+        
+        % Initial critic weights w_0 \in R^{N_1}
+        w_0 = zeros(Phi.N1,1);
+
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry (not used)
+        legend_entry = '';    
+        
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = preset;
+
+        
+    %%    
+    % *********************************************************************
+    % *********************************************************************
+    %
+    % ALL METHOD COMPARISON OF D. VRABIE, F.L. LEWIS (2009) NONLINEAR
+    % "HARD" EXAMPLE (SEC. 6.2)
+    %      
+    % *********************************************************************
+    % *********************************************************************
+        
+    % *********************************************************************
+    %
+    % COMPARISON D. VRABIE, F.L. LEWIS (2009) NONLINEAR "HARD" EXAMPLE
+    % (SEC. 6.2) -- IRL
+    %
+    
+    case 'comp_vrabie_lewis_2009_hard_irl'
+    
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'irl';
+        sys.tag = group_settings.sys.tag;
+  
+        % ***********************
+        %
+        % SETTINGS AND DESIGN PARAMETERS
+        %       
+        
+        % Number of policy iterations to perform in the PI algorithm before
+        % terminating
+        num_pol_iter = 10;
+        
+        % Number of simulations to run per iteration of the PI algorithm
+        num_sims_per_iter = 1;      
+        
+        % Number of samples to collect per simulation for least squares
+        % minimization at end of each iteration of PI algorithm
+        num_samples_per_sim = 100;
+        
+        % Integral reinforcement interval length (sec)
+        T = group_settings.tf / (num_pol_iter * num_sims_per_iter * ...
+                                    num_samples_per_sim);        
+
+        % State penalty function
+        Q = group_settings.Q;
+        
+        % Control penalty matrix
+        R = group_settings.R;
+        
+        % Basis
+        basis.tag = group_settings.basis_critic.tag;
+        basis.N = group_settings.basis_critic.N;  
+        
+        % Probing noise
+        noise.tag = '0';
+%         noise.tag = group_settings.noise.tag;
+
+        % Matrix of ICs. A total of 'num_pol_iter' * 'num_sims_per_iter'
+        % simulations are run in the algorithm. As many of the ICs as
+        % desired can be set in this matrix. Else, ICs will be generated
+        % manually.
+        x0mat = group_settings.x0';
+        
+        % Manner in which ICs are generated at the beginning of each new
+        % simulation, after the algorithm has run out of ICs specified in
+        % x0mat. Has the options:
+        %       'rand'      Randomly generate new ICs. 
+        %       'cont'      Continue ICs of new simulation as final values
+        %                   of previous simulation.
+        x0_behavior = 'cont';
+
+        % ICs for critic NN
+        W0 = [0 ; 0 ; 3/2 ; 0 ; 0 ; -0.1 ; 0 ; 3];
+        
+        % Time to simululate for after learning (i.e, [t_f, t_f + t_sim])
+        % (sec)
+        tsim = group_settings.tsim;
+        
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry
+        legend_entry = 'IRL';
+
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = legend_entry;           
+
+    % *********************************************************************
+    %
+    % COMPARISON D. VRABIE, F.L. LEWIS (2009) NONLINEAR "HARD" EXAMPLE
+    % (SEC. 6.2) -- SPI
+    %
+    
+    case 'comp_vrabie_lewis_2009_hard_spi'
+        
+        
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'spi';
+        sys.tag = group_settings.sys.tag;      
+
+        % Probing noise tag
+        noise.tag = group_settings.noise.tag;
+        
+        % Length of learning window [0, t_f].
+        % I.e., time to insert probing noise for (sec).
+%         tf = group_settings.tf;
+        tf = 1000;
+        
+        % Time to simululate for after learning (i.e, [t_f, t_f + t_sim])
+        % (sec)
+        tsim = group_settings.tsim;
+
+        % State penalty function
+        Q = group_settings.Q;
+        
+        % Control penalty matrix
+        R = group_settings.R;
+        
+        % Basis
+        basis.tag = group_settings.basis_critic.tag;
+        basis.N = group_settings.basis_critic.N;              
+        
+        % NN tuning gains
+        alpha1 = 10;
+        alpha2 = 10;
+        
+        % NN tuning parameters
+        F1 = zeros(basis.N,1);   % Not used  
+        F2 = 5*eye(basis.N);
+        
+        % System ICS
+        x0 = group_settings.x0; 
+        
+        % ICs for critic NN
+        Wc0 = [0 ; 0 ; 3/2 ; 0 ; 0 ; -0.1 ; 0 ; 3];    
+%         Wc0 = ones(basis.N,1);
+        
+        % ICs for actor NN
+        Wa0 = Wc0;
+                   
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry
+        legend_entry = 'SPI';
+
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = legend_entry;           
+
+        
+    % *********************************************************************
+    %
+    % COMPARISON D. VRABIE, F.L. LEWIS (2009) NONLINEAR "HARD" EXAMPLE
+    % (SEC. 6.2) -- RADP (MATCHED UNCERTAINTY)
+    %        
+        
+    case 'comp_vrabie_lewis_2009_hard_radp_matched'
+        
+        
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'radp_matched';
+        sys.tag = group_settings.sys.tag;
+  
+        % ***********************
+        %
+        % SETTINGS AND DESIGN PARAMETERS
+        %       
+                
+        % Probing noise tag
+        noise.tag = group_settings.noise.tag;
+        
+        % State penalty function
+        Q = group_settings.Q;
+        
+        % Control penalty matrix
+        R = group_settings.R;         
+
+        % Critic NN activation function parameters (cf. eqn. (13))
+        Phi1.tag = group_settings.basis_critic.tag;
+        Phi1.N = group_settings.basis_critic.N; 
+        
+        % Actor NN activation function parameters (cf. eqn. (14))
+        Phi2.tag = group_settings.basis_actor_no_g.tag;
+        Phi2.N = group_settings.basis_actor_no_g.N;
+        
+        % Pack basis parameters
+        basis.Phi1 = Phi1;
+        basis.Phi2 = Phi2;   
+        
+        % Setting to tell the algorithm if dynamic uncertainty is present
+        % in the system.
+        do_uncertainty = 0;
+                
+        % Number of samples to collect for least squares minimizations
+%         l = 50;
+%         l = 10;
+%         l = 5;
+        l = 100;
+%         l = 1000;
+        
+        % Tolerance \epsilon_1 to determine phase-1 termination (cf. eqn.
+        % (37))
+        eps1 = 1e-6;
+        
+        % Length of learning window [0, t_f] (sec)
+%         tf = group_settings.tf;
+        tf = 1;
+        
+        % Time to simululate for after learning (i.e, [t_f, t_f + t_sim])
+        % (sec)
+%         tsim = group_settings.tsim;
+        tsim = 10;
+             
+        
+        % Tag corresponding to the initial stabilizing policy u_0(x) (cf.
+        % Assumption 4.2).
+        u_0 = group_settings.u_0;
+        
+        % Robust redesign function \rho(s) (cf. under eqn. (31)).
+        % NOTE: Not used (dynamic uncertainty not present).
+        rho = '';
+        
+        % Initial conditions
+        % IC for uncertain dynamics w (not used -- leave empty)
+        w0 = [];                
+        % IC for known dynamics x
+        x0 = group_settings.x0;                
+        
+        % IC for actor NN w_0 \in R^{N_2}
+%         w_0 = [-1 ; 1];  
+        w_0 = 0 * ones(Phi2.N,1);
+ 
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry (not used)
+        legend_entry = 'RADP';        
+
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = legend_entry;           
+
+    % *********************************************************************
+    %
+    % COMPARISON D. VRABIE, F.L. LEWIS (2009) NONLINEAR "HARD" EXAMPLE
+    % (SEC. 6.2) -- VI
+    %
+    
+    case 'comp_vrabie_lewis_2009_hard_vi'
+         
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'vi';
+        sys.tag = group_settings.sys.tag;  
+        
+        % Order in which the control signal enters the system
+        sys.upow = 1;
+        
+        % ***********************
+        %
+        % SETTINGS AND DESIGN PARAMETERS
+        %     
+        
+        % State penalty function
+        Q = group_settings.Q;
+        
+        % Control penalty matrix
+        R = group_settings.R; 
+        
+        % Critic NN basis 
+        Phi.tag = group_settings.basis_critic.tag;
+        Phi.N1 = group_settings.basis_critic.N;             
+        
+        % Hamiltonian NN basis \Psi_0(x)
+        Psi0.tag = 'comp_vrabie_lewis_2009_hard_vi_psi0';
+        
+        % Hamiltonian NN basis \Psi_1(x)
+        Psi1.tag = 'comp_vrabie_lewis_2009_hard_vi_psi1';
+        
+        % Store basis parameters
+        basis.Phi = Phi;
+        basis.Psi0 = Psi0;
+        basis.Psi1 = Psi1;
+        
+        % Probing noise tag
+        noise.tag = group_settings.noise.tag;
+        
+        % Initial policy u_0(x)
+%         u_0 = '0';                  % Not used
+        u_0 = group_settings.u_0;
+ 
+        % Max number of iterations after which to terminate the VI
+        % algorithm
+%         max_iter = 30;   
+%         max_iter = 5000; 
+%         max_iter = 100;
+%         max_iter = 1000;
+        max_iter = 2500; 
+
+        % Length of learning window [0, t_f] (sec)
+%         tf = group_settings.tf;
+        tf = 10;
+        
+        % Time to simululate for after learning (i.e, [t_f, t_f + t_sim])
+        % (sec)
+        tsim = group_settings.tsim;        
+        
+        
+        % Forward Euler approximation for NN weight updates (cf. Sec. IV.
+        % D.)
+%         h_k = 1e-3;
+        h_k = 1e-1;
+        
+        % Max stepsize for ode45
+        maxstep = 1e-1;
+%         maxstep = 1e-2;
+%         maxstep = 1e-3;
+        
+        % Initial conditions x(0)
+        x0 = group_settings.x0;
+        
+        % Initial critic weights w_0 \in R^{N_1}
+%         w_0 = [0 ; 0 ; 3/2 ; 0 ; 0 ; -0.1 ; 0 ; 3];
+%         w_0 = [1 ; 0 ; 1 ; 0 ; 0 ; 0 ; 0 ; 0];
+%         w_0 = 0 * ones(Phi.N1,1);
+
+%         w_0 = [1 ; 0 ; 1 ; 0 ; 0 ; 0 ; 0 ; 0];
+%         w_0 = [1 ; 1 ; 0];
+%         w_0 = [1 ; 0; 1; 0; 0; 0; 0];
+%         w_0 = [1 ; 0; 1; 0; 0; 0];
+        w_0 = [1 ; 0; 1; 0];
+%         w_0 = [1 ;  1; 0; 0; 0];
+%         w_0 = [1 ;  1; 0; 0];
+%         w_0 = [1 ;  1; 0];
+
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry (not used)
+        legend_entry = 'VI';    
+        
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = legend_entry;        
+ 
+    % *********************************************************************
+    %
+    % COMPARISON D. VRABIE, F.L. LEWIS (2009) NONLINEAR "HARD" EXAMPLE
+    % (SEC. 6.2) -- VI (TESTING)
+    %
+    
+    case 'comp_vrabie_lewis_2009_hard_vi_test'
+         
+        % ***********************
+        %
+        % ALGORITHM AND SYSTEM
+        %        
+        
+        alg = 'vi_test';
+        sys.tag = group_settings.sys.tag;  
+        
+        % Order in which the control signal enters the system
+        sys.upow = 1;
+        
+        % ***********************
+        %
+        % SETTINGS AND DESIGN PARAMETERS
+        %     
+        
+        % State penalty function
+        Q = group_settings.Q;
+        
+        % Control penalty matrix
+        R = group_settings.R; 
+        
+        % Critic NN basis 
+        Phi.tag = group_settings.basis_critic.tag;
+        Phi.N1 = group_settings.basis_critic.N;             
+        
+        % Hamiltonian NN basis
+        Psi.tag = 'comp_vrabie_lewis_2009_hard_vi_psi_test';
+        % Number of functions of x only
+        Psi.N2_0 = 3;
+        % Number of functions of x and u
+        Psi.N2_1 = 2;
+        % Total order of Hamiltonian NN basis
+        Psi.N2 = Psi.N2_0 + Psi.N2_1;
+        
+        % Store basis parameters
+        basis.Phi = Phi;
+        basis.Psi = Psi;
+        
+        % Probing noise tag
+        noise.tag = group_settings.noise.tag;
+        
+        % Initial policy u_0(x)
+%         u_0 = '0';                  % Not used
+        u_0 = group_settings.u_0;
+ 
+        % Max number of iterations after which to terminate the VI
+        % algorithm
+%         max_iter = 30;   
+%         max_iter = 5000; 
+        max_iter = 2000;
+%         max_iter = 1000;
+%         max_iter = 2500; 
+
+        % Length of learning window [0, t_f] (sec)
+%         tf = group_settings.tf;
+        tf = 10;
+        
+        % Time to simululate for after learning (i.e, [t_f, t_f + t_sim])
+        % (sec)
+        tsim = group_settings.tsim;        
+        
+        
+        % Forward Euler approximation for NN weight updates (cf. Sec. IV.
+        % D.)
+%         h_k = 1e-3;
+        h_k = 1e-1;
+        
+        % Max stepsize for ode45
+        maxstep = 1e-1;
+%         maxstep = 1e-2;
+%         maxstep = 1e-3;
+        
+        % Initial conditions x(0)
+        x0 = group_settings.x0;
+        
+        % Initial critic weights w_0 \in R^{N_1}
+%         w_0 = [0 ; 0 ; 3/2 ; 0 ; 0 ; -0.1 ; 0 ; 3];
+        w_0 = 1 * ones(Phi.N1,1);
+
+%         w_0 = [1 ; 0 ; 1 ; 0 ; 0 ; 0 ; 0 ; 0];
+%         w_0 = [1 ; 1 ; 0];
+%         w_0 = [1 ; 0; 1; 0; 0; 0; 0];
+%         w_0 = [1 ; 0; 1; 0; 0; 0];
+%         w_0 = [1 ; 0; 2; 0];
+%         w_0 = [1 ;  1; 0; 0; 0];
+%         w_0 = [1 ;  1; 0; 0];
+%         w_0 = [1 ;  1; 0];
+
+        % ***********************
+        %
+        % PLOT SETTINGS
+        %    
+        
+        % Legend entry (not used)
+        legend_entry = 'VI';    
+        
+        % Plot folder name. Can use preset tag, or anything else.
+        plotfolder = legend_entry;          
+        
+        
+    % *********************************************************************    
+    % *********************************************************************
+    %
+    % THROW ERROR IF TAG DOES NOT COME UP A MATCH
+    %   
+    % *********************************************************************
+    % *********************************************************************
+    
+    otherwise
+        
+        error('*** ERROR: PRESET TAG NOT RECOGNIZED ***');  
+       
+end
+
+
+
+
+
+%%
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+%
+% INITIAILIZE SYSTEM-SPECIFIC PARAMETERS
+% 
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+
+
+switch sys.tag
+
+    % ***********************
+    %
+    % D. VRABIE, F.L. LEWIS (2009) -- EASY
+    %
+    
+    case 'vrabie_lewis_2009_easy'
+        
+        % System parameters
+        sys.n = 2;      % System order
+        sys.m = 1;      % Number of inputs   
+        
+    % ***********************
+    %
+    % D. VRABIE, F.L. LEWIS (2009) -- HARD
+    %
+    
+    case 'vrabie_lewis_2009_hard'
+        
+        % System parameters
+        sys.n = 2;      % System order
+        sys.m = 1;      % Number of inputs      
+        
+    % ***********************
+    %
+    % K.G. VAMVOUDAKIS, F.L. LEWIS (2010) -- F16 LINEAR
+    %
+    
+    case 'vamvoudakis_lewis_2010_F16_lin'
+        
+        % System parameters
+        sys.n = 3;      % System order
+        sys.m = 1;      % Number of inputs
+        
+           
+    % ***********************
+    %
+    % K.G. VAMVOUDAKIS, F.L. LEWIS (2010) -- 2ND ORDER NONLINEAR
+    %
+    
+    case 'vamvoudakis_lewis_2010_nonlin'
+        
+        % System parameters
+        sys.n = 2;      % System order
+        sys.m = 1;      % Number of inputs      
+        
+    % ***********************
+    %
+    % Y. JIANG, Z.-P. JIANG (2014) -- JET ENGINE
+    %
+    
+    case 'jiang_jiang_2014_engine'
+        
+        % System parameters
+        sys.p = 1;      % Order of unknown w-dynamics
+        sys.n = 1;      % Order of known x-dynamics
+        sys.m = 1;      % Number of inputs      
+        
+    % ***********************
+    %
+    % T. BIAN, Z.-P. JIANG (2021) -- NONLINEAR EXAMPLE
+    %
+    
+    case 'bian_jiang_2021_nonlin_ex'
+        
+        % System parameters
+        sys.n = 2;      % Order of system   
+        sys.m = 1;      % Number of inputs
+               
+    % ***********************
+    %
+    % THROW ERROR IF TAG DOES NOT COME UP A MATCH
+    %   
+    
+    otherwise
+        
+        error('*** ERROR: SYSTEM TAG NOT RECOGNIZED ***');
+
+end
+
+
+%%
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+%
+% SYSTEM PLOT SETTINGS
+% 
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+
+% *************************************************************************
+%
+% DEFAULT SETTINGS
+%
+% Note: These settings will be initialized as default. If different
+% settings are desired, simply overwrite the default value in the switch
+% case structure below
+%
+% *************************************************************************
+
+% Initialize empty structs
+x_t_title = cell(sys.n, 1);
+x_t_ylabel = cell(sys.n, 1);
+x_t_filename = cell(sys.n, 1);
+u_t_title = cell(sys.m, 1);
+u_t_ylabel = cell(sys.m, 1); 
+u_t_filename = cell(sys.m, 1);
+
+% Fill out state trajectory settings
+if sys.n == 1
+   
+    % n = 1. Do not include subscripts in plots.
+    x_t_title{1} = ['State Trajectory x(t)'];
+    x_t_ylabel{1} = ['x(t)'];  
+    x_t_filename{1} = ['x_t'];
+    
+else
+    
+    % n > 1. Include subscripts in plots.
+    for i = 1:sys.n  
+        nsi = num2str(i);
+        x_t_title{i} = ['State Trajectory x_{' nsi '}(t)'];
+        x_t_ylabel{i} = ['x_{' nsi '}(t)'];  
+        x_t_filename{i} = ['x_' nsi '_t'];
+    end
+    
+end
+
+% Fill out control signal settings
+if sys.m == 1
+   
+    % m = 1. Do not include subscripts in plots.
+    u_t_title{1} = 'Control Signal u(t)';
+    u_t_ylabel{1} = 'u(t)';  
+    u_t_filename{1} = 'u_t';
+    
+else
+    
+    % m > 1. Include subscripts in plots.
+    for i = 1:sys.m   
+        nsi = num2str(i);
+        x_t_title{i} = ['Control Signal u_{' nsi '}(t)'];
+        x_t_ylabel{i} = ['u_{' nsi '}(t)'];  
+        x_t_filename{i} = ['u_' nsi '_t'];
+    end    
+    
+end
+
+
+% *************************************************************************
+%
+% CUSTOM SETTINGS
+%
+% Note: If default settings are desired, simply leave the respective system
+% case empty.
+%
+% *************************************************************************
+
+switch sys.tag
+
+    % ***********************
+    %
+    % D. VRABIE, F.L. LEWIS (2009) -- EASY
+    %
+    
+    case 'vrabie_lewis_2009_easy'
+
+        % Use default settings     
+        
+    % ***********************
+    %
+    % D. VRABIE, F.L. LEWIS (2009) -- HARD
+    %
+    
+    case 'vrabie_lewis_2009_hard'
+        
+        % Use default settings       
+        
+    % ***********************
+    %
+    % K.G. VAMVOUDAKIS, F.L. LEWIS (2010) -- F16 LINEAR
+    %
+    
+    case 'vamvoudakis_lewis_2010_F16_lin'
+        
+        % Use default settings
+           
+    % ***********************
+    %
+    % K.G. VAMVOUDAKIS, F.L. LEWIS (2010) -- 2ND ORDER NONLINEAR
+    %
+    
+    case 'vamvoudakis_lewis_2010_nonlin'
+        
+        % Use default settings      
+        
+    % ***********************
+    %
+    % Y. JIANG, Z.-P. JIANG (2014) -- JET ENGINE
+    %
+    
+    case 'jiang_jiang_2014_engine'
+
+        % Overwrite state trajectory plot settings
+        x_t_title = cell(3, 1);
+        x_t_ylabel = cell(3, 1);
+        x_t_filename = cell(3, 1);
+        
+        % Fill values
+        x_t_title{1} = 'Rotating Stall Amplitude R(t)';
+        x_t_ylabel{1} = 'R(t)';
+        x_t_filename{1} = 'R_t';
+        x_t_title{2} = ['Scaled Annulus-Averaged Flow \phi(t)' ...
+                        ' = \Phi(t) - \Phi_e'];
+        x_t_ylabel{2} = '\phi(t)';
+        x_t_filename{2} = 'phi_t';
+        x_t_title{3} = ['Plenum Pressure Rise \psi(t)' ...
+                        ' = \Psi(t) - \Psi_e'];
+        x_t_ylabel{3} = '\psi(t)';
+        x_t_filename{3} = 'psi_t';
+        
+        
+    % ***********************
+    %
+    % T. BIAN, Z.-P. JIANG (2021) -- NONLINEAR EXAMPLE
+    %
+    
+    case 'bian_jiang_2021_nonlin_ex'
+        
+        % Use default settings 
+        
+    % ***********************
+    %
+    % THROW ERROR IF TAG DOES NOT COME UP A MATCH
+    %   
+    
+    otherwise
+        
+        error('*** ERROR: SYSTEM TAG NOT RECOGNIZED ***');
+
+end
+
+
+%%
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+%
+% BASIS INITIALIZATION
+%
+% Get number of basis functions, and perform any other initialization
+% necessary.
+% 
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+
+
+% *************************************************************************
+%
+% CREATE CELL ARRAY OF BASIS OBJECTS
+%
+% Depending on the algorithm, there may be more than one basis used. Pack
+% all bases into a cell array so that they may be manipulated/initialized
+% one at a time.
+% 
+% *************************************************************************
+
+switch alg
+
+    % ***********************
+    %
+    % IRL
+    %
+    
+    case 'irl'
+       
+        basis_cell = {basis};
+
+    % ***********************
+    %
+    % SPI
+    %
+    
+    case 'spi'
+  
+        basis_cell = {basis};
+        
+    % ***********************
+    %
+    % RADP (MATCHED UNCERTAINTY)
+    %
+    
+    case 'radp_matched'
+  
+        basis_cell = {basis.Phi1 ; basis.Phi2};       
+        
+        
+    % ***********************
+    %
+    % RADP (UNMATCHED UNCERTAINTY)
+    %
+    
+    case 'radp_unmatched'
+  
+        basis_cell = {basis.Phi1 ; basis.Phi2 ; basis.Phi3 ; basis.Phi4};
+
+
+    % ***********************
+    %
+    % VI
+    %
+    
+    case 'vi'        
+        
+        basis_cell = {basis.Phi ; basis.Psi0 ; basis.Psi1};
+
+    % ***********************
+    %
+    % VI (TESTING)
+    %
+    
+    case 'vi_test'        
+        
+        basis_cell = {basis.Phi ; basis.Psi0 ; basis.Psi1};
+        
+    % *********************************************************************
+    %
+    % THROW ERROR IF TAG DOES NOT COME UP A MATCH
+    %   
+    
+    otherwise
+        
+        error('**** ERROR: ALGORITHM TAG NOT RECOGNIZED ***');  
+       
+end
+
+
+% *************************************************************************
+%
+% INITIALIZE BASIS OBJECTS
+% 
+% *************************************************************************
+
+% Number of bases used in this algorithm
+numbasis = size(basis_cell, 1);
+
+% Cell array to hold initialized basis objects
+basis_cell_init = cell(numbasis, 1);
+
+for i = 1:numbasis
+   
+    % Extract current basis
+    basis_i = basis_cell{i};
+    
+    % *********************************************************************
+    %
+    % BASIS-SPECIFIC INITIALIZATION
+    %
+    % If the basis is of tag 'monomial' and type 'all', 'even', or 'odd',
+    % the field 'dmat' needs to be initialized (see description of
+    % eval_phi.m for details).
+    %
+    % *********************************************************************
+    
+    % DEBUGGING
+    basis_i.tag = 'monomial';
+    basis_i.type = 'even';
+    basis_i.K = 4;
+    
+    if strcmp(basis_i.tag, 'monomial') 
+        
+        % Monomial basis used. See if 'dmat' needs to be initialized.
+        
+        if  strcmp(basis_i.type, 'all') ||...
+            strcmp(basis_i.type, 'even') ||...
+            strcmp(basis_i.type, 'odd') 
+        
+            % 'dmat' needs to be initialized.
+               
+            % Max total degree of basis monomials
+            K = basis_i.K;
+            
+            % Powers of values {0,1,...,K} to choose from for n factors of
+            % the monomial
+            a = repelem(0:K, sys.n);
+            
+            % All way to choose n elements from the vector a (before taking
+            % permutations)
+            d = nchoosek(a, sys.n);
+            
+            % Erase duplicates
+            d = unique(d,'rows');
+            
+            % Get sum of columns along each row
+            dsum = sum(d,2);
+            
+            % Remove rows which sum to zero and sum to > K
+            d = d(((dsum > 0) & (dsum <= K)), :);
+            
+            % Get row sum of reduced matrix
+            dsum = sum(d,2);
+            
+            % If only even/odd functions desired, remove odd/even
+            % functions, respectively
+            switch basis_i.type
+                
+                case 'even'
+                    
+                    % Remove odd-sum rows
+                    d = d(mod(dsum,2) == 0, :);
+                    
+                case 'odd'
+                    
+                    % Remove even-sum rows
+                    d = d(mod(dsum,2) == 1, :);
+                    
+                case 'all'
+                    
+                    % Don't remove anything
+                    
+                % *********************************************************
+                %
+                % THROW ERROR IF TAG DOES NOT COME UP A MATCH
+                %   
+    
+                otherwise
+        
+                    error(...
+                     '*** ERROR: MONOMIAL BASIS TYPE NOT RECOGNIZED ***');  
+                    
+            end
+            
+            
+            % Finally, take all permutations of the powers
+            dmat = [];
+            for j = 1:size(d,1)
+
+                dmat = [    dmat
+                            unique(perms(d(j,:)),'rows')    ];
+
+            end
+            
+            % Store dmat
+            basis_i.dmat = dmat;
+            
+        else
+            
+            % The monomial basis is of type 'custom'. Thus, 'dmat' was
+            % initialized manually already. Do nothing.
+            
+        end
+        
+    end
+    
+    
+    % *********************************************************************
+    %
+    % GET TOTAL NUMBER OF BASIS FUNCTIONS
+    %
+    % *********************************************************************
+    
+    % Evaluate activation functions at zero
+    [phi0, ~] = eval_phi(zeros(sys.n,1), basis_i);
+    
+    % Get number of activation functions
+    basis_i.N = size(phi0, 1);
+    
+
+    % ***********************
+    %
+    % STORE INITIALIZED BASIS FUNCTION IN CELL ARRAY
+    %
+    
+    basis_cell_init{i} = basis_i;
+    
+    
+end
+
+
+% *************************************************************************
+%
+% STORE INITIALIZED BASIS OBJECTS
+%
+% Now that each of the basis elements have been fully initialized, they
+% need to be stored in the 'basis' struct. In effect, this we will take the
+% basis objects stored in 'basis', which were partially initialized, and
+% overwrite them with the corresponding objects in 'basis_cell_init', which
+% have been fully initialized.
+% 
+% *************************************************************************
+
+
+switch alg
+
+    % ***********************
+    %
+    % IRL
+    %
+    
+    case 'irl'
+       
+        basis = basis_cell_init{1};
+
+    % ***********************
+    %
+    % SPI
+    %
+    
+    case 'spi'
+  
+        basis = basis_cell_init{1};
+        
+    % ***********************
+    %
+    % RADP (MATCHED UNCERTAINTY)
+    %
+    
+    case 'radp_matched'
+  
+        basis.Phi1 = basis_cell_init{1};
+        basis.Phi2 = basis_cell_init{2};  
+            
+    % ***********************
+    %
+    % RADP (UNMATCHED UNCERTAINTY)
+    %
+    
+    case 'radp_unmatched'
+  
+        basis.Phi1 = basis_cell_init{1};
+        basis.Phi2 = basis_cell_init{2}; 
+        basis.Phi3 = basis_cell_init{3}; 
+        basis.Phi4 = basis_cell_init{4}; 
+
+    % ***********************
+    %
+    % VI
+    %
+    
+    case 'vi'        
+        
+        basis.Phi = basis_cell_init{1};
+        basis.Psi0 = basis_cell_init{2};
+        basis.Psi1 = basis_cell_init{3};
+
+    % ***********************
+    %
+    % VI (TESTING)
+    %
+    
+    case 'vi_test'        
+        
+        basis.Phi = basis_cell_init{1};
+        basis.Psi0 = basis_cell_init{2};
+        basis.Psi1 = basis_cell_init{3};
+        
+    % *********************************************************************
+    %
+    % THROW ERROR IF TAG DOES NOT COME UP A MATCH
+    %   
+    
+    otherwise
+        
+        error('**** ERROR: ALGORITHM TAG NOT RECOGNIZED ***');  
+       
+end
+
+
+
+%%
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+%
+% STORE ALGORITHM SETTINGS/DESIGN PARAMETERS
+% 
+% *************************************************************************
+% *************************************************************************
+% *************************************************************************
+
+
+% *************************************************************************
+%
+% GENERAL SETTINGS
+%
+% *************************************************************************
+
+% Preset tag
+alg_settings.preset = preset;
+
+% Plot settings -- system settings
+sys_settings.x_t_title = x_t_title;
+sys_settings.x_t_ylabel = x_t_ylabel;
+sys_settings.x_t_filename = x_t_filename;
+sys_settings.u_t_title = u_t_title;
+sys_settings.u_t_ylabel = u_t_ylabel;
+sys_settings.u_t_filename = u_t_filename;
+
+% Plot settings -- general
+plot_settings.legend_entry = legend_entry;
+plot_settings.plotfolder = plotfolder;
+plot_settings.sys_settings = sys_settings;
+
+% Write plot settings
+alg_settings.plot_settings = plot_settings;
+
+
+% *************************************************************************
+%
+% ALGORITHM-SPECIFIC SETTINGS
+%
+% *************************************************************************
+
+switch alg
+
+    % *********************************************************************
+    %
+    % IRL
+    %
+    
+    case 'irl'
+       
+        alg_settings.sys = sys;
+        alg_settings.alg = alg;
+ 
+        alg_settings.Q = Q;
+        alg_settings.R = R;
+        alg_settings.basis = basis;
+        alg_settings.noise = noise;
+        
+        alg_settings.T = T;
+        alg_settings.num_pol_iter = num_pol_iter;
+        alg_settings.num_sims_per_iter = num_sims_per_iter;
+        alg_settings.num_samples_per_sim = num_samples_per_sim;
+        
+        alg_settings.x0mat = x0mat;
+        alg_settings.x0_behavior = x0_behavior;
+        alg_settings.W0 = W0;
+        
+        alg_settings.tsim = tsim;
+
+    % *********************************************************************
+    %
+    % SPI
+    %
+    
+    case 'spi'
+  
+        alg_settings.sys = sys;
+        alg_settings.alg = alg;
+              
+        alg_settings.Q = Q;
+        alg_settings.R = R;
+        alg_settings.basis = basis;
+        alg_settings.noise = noise;
+        alg_settings.tf = tf;
+        alg_settings.tsim = tsim;
+        
+        alg_settings.alpha1 = alpha1;
+        alg_settings.alpha2 = alpha2;
+        alg_settings.F1 = F1;
+        alg_settings.F2 = F2;
+        
+        alg_settings.Wc0 = Wc0;
+        alg_settings.Wa0 = Wa0;
+        alg_settings.x0 = x0;
+ 
+    % *********************************************************************
+    %
+    % RADP (MATCHED UNCERTAINTY)
+    %
+    
+    case 'radp_matched'
+  
+        alg_settings.sys = sys;
+        alg_settings.alg = alg;
+        
+        alg_settings.Q = Q;
+        alg_settings.R = R;
+        alg_settings.basis = basis;
+        alg_settings.noise = noise;
+        alg_settings.do_uncertainty = do_uncertainty;
+        alg_settings.rho = rho;
+        
+        alg_settings.l = l;
+        alg_settings.eps1 = eps1;
+        
+        alg_settings.tf = tf;
+        alg_settings.tsim = tsim;
+        
+        alg_settings.u_0 = u_0;
+        
+        alg_settings.w0 = w0;
+        alg_settings.x0 = x0;  
+        
+        alg_settings.w_0 = w_0;        
+        
+        
+    % *********************************************************************
+    %
+    % RADP (UNMATCHED UNCERTAINTY)
+    %
+    
+    case 'radp_unmatched'
+  
+        alg_settings.sys = sys;
+        alg_settings.alg = alg;
+        
+        alg_settings.Q = Q;
+        alg_settings.R = R;
+        alg_settings.basis = basis;
+        alg_settings.noise = noise;
+        alg_settings.rho = rho;
+        
+        alg_settings.l = l;
+        alg_settings.eps1 = eps1;
+        alg_settings.eps = eps;
+
+        alg_settings.tf = tf;
+        alg_settings.tsim = tsim;
+        
+        alg_settings.u_0 = u_0;
+        
+        alg_settings.w0 = w0;
+        alg_settings.x0 = x0;
+        alg_settings.z0 = z0;    
+        
+        alg_settings.w_0 = w_0;
+
+
+    % *********************************************************************
+    %
+    % VI
+    %
+    
+    case 'vi'        
+        
+        alg_settings.sys = sys;
+        alg_settings.alg = alg;        
+
+        alg_settings.Q = Q;
+        alg_settings.R = R;
+        alg_settings.basis = basis;
+        alg_settings.noise = noise;
+        alg_settings.u_0 = u_0;
+        
+        alg_settings.max_iter = max_iter;
+        alg_settings.tf = tf;
+        alg_settings.tsim = tsim;
+        alg_settings.maxstep = maxstep;
+        alg_settings.h_k = h_k;
+        
+        alg_settings.x0 = x0;
+        alg_settings.w_0 = w_0;
+
+
+    % *********************************************************************
+    %
+    % VI (TESTING)
+    %
+    
+    case 'vi_test'        
+        
+        alg_settings.sys = sys;
+        alg_settings.alg = alg;        
+
+        alg_settings.Q = Q;
+        alg_settings.R = R;
+        alg_settings.basis = basis;
+        alg_settings.noise = noise;
+        alg_settings.u_0 = u_0;
+        
+        alg_settings.max_iter = max_iter;
+        alg_settings.tf = tf;
+        alg_settings.tsim = tsim;
+        alg_settings.maxstep = maxstep;
+        alg_settings.h_k = h_k;
+        
+        alg_settings.x0 = x0;
+        alg_settings.w_0 = w_0;        
+        
+        
+    % *********************************************************************
+    %
+    % THROW ERROR IF TAG DOES NOT COME UP A MATCH
+    %   
+    
+    otherwise
+        
+        error('**** ERROR: ALGORITHM TAG NOT RECOGNIZED ***');  
+       
+end
