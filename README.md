@@ -1,7 +1,7 @@
 # TNNLS 2022 -- CT-RL Optimal Control
 
 Brent Wallace
-2022/07/30
+2022/12/01
 Arizona State University
 
 Contains all research-related code for the work:
